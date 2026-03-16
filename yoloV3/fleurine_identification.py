@@ -3,6 +3,7 @@ from detect import Detect
 import cfg
 import cv2
 import numpy as np
+import torch
 
 """
 1) 加载模型权重
@@ -21,38 +22,45 @@ class Fleurine_Identification:
         )
 
     def run(self, video_path):
-        cap = cv2.VideoCapture(video_path)
+        cap = None
         out = None
-        fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-        while cap.isOpened():
+        try:
+            cap = cv2.VideoCapture(video_path)
             ret, frame = cap.read()
             if not ret:
-                break
-            if out is None:
-                h, w = frame.shape[:2]
-                fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-                out = cv2.VideoWriter("output_fleurine.mp4", fourcc, 30.0, (w, h))
-
-            # 图像resize到416x416
-            frame_resized, scale, left, top = self.resize_image(frame)
-            # 处理后的图像传入模型，得到预测框
-            boxes = self.detect.get_filter_boxes(
-                frame_resized,
-                cfg.CLASS_NUM_FLEURINE,
-                cfg.CONF_THRESH,
-                cfg.IOU_THRESH_FLEURINE,
-                cfg.ANCHORS_GROUP_FOR_FLEURINE,
-            )
-            # 原图像上画框
-            self.draw_rect_frame(frame, boxes, scale, left, top)
-            out.write(frame)
-
-        cap.release()
-        if out is not None:
-            out.release()
+                cap.release()
+                return
+            h, w = frame.shape[:2]
+            fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+            out = cv2.VideoWriter("output_fleurine.mp4", fourcc, 30.0, (w, h))
+            while True:
+                if frame is None:
+                    break
+                # 转 RGB（和模型期望一致）
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                # 图像resize到416x416
+                frame_resized, scale, left, top = self.resize_image(frame)
+                # 处理后的图像传入模型，得到预测框
+                with torch.no_grad():
+                    boxes = self.detect.get_filter_boxes(
+                        frame_resized,
+                        cfg.CLASS_NUM_FLEURINE,
+                        cfg.CONF_THRESH_FLEURINE,
+                        cfg.IOU_THRESH_FLEURINE,
+                        cfg.ANCHORS_GROUP_FOR_FLEURINE,
+                    )
+                # 原图像上画框
+                self.draw_rect_frame(frame, boxes, scale, left, top)
+                out.write(frame)
+                ret, frame = cap.read()
+        finally:
+            if cap is not None:
+                cap.release()
+            if out is not None:
+                out.release()
 
     @staticmethod
-    def resize_image(image, target_size=(416, 416), color=(114, 114, 114)):
+    def resize_image(image, target_size=(416, 416)):
         """等比例缩放到416×416"""
         # 创建纯黑色背景图
         background = np.zeros((target_size[1], target_size[0], 3), dtype=np.uint8)
