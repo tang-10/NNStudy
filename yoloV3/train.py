@@ -111,4 +111,4 @@ def train_fleurine(epochs):
 
 if __name__ == "__main__":
     # train_base(20)
-    train_fleurine(epochs=500)
+    train_fleurine(epochs=100)

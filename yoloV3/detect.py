@@ -73,7 +73,7 @@ class Detect:
         return image
 
     def get_model(self, model, model_path):
-        model.load_state_dict(torch.load(model_path))
+        model.load_state_dict(torch.load(model_path, weights_only=True))
         model.eval()
         return model
 
@@ -198,33 +198,33 @@ def detect_fleurine():
     model = YOYOV3(num_classes=cfg.CLASS_NUM_FLEURINE, dark53=False).to(cfg.DEVICE)
     detect = Detect(
         model,
-        "yoloV3/checkpoints/best_shuffule_model_fleurine.pt",
+        "yoloV3/checkpoints/best_shuffule_model_fleurine_100.pt",
         cfg.MEAN_FLEURINE,
         cfg.STD_FLEURINE,
     )
-    # for image_name in os.listdir("ImageDatas/Fleurine_frames"):
-    #     image_path = os.path.join("ImageDatas/Fleurine_frames", image_name)
-    #     save_path = os.path.join("yoloV3/output/out_fleurine_2000_txt", image_name)
-    #     detect.run(
-    #         image_path,
-    #         save_path,
-    #         cfg.CLASS_NUM_FLEURINE,
-    #         cfg.CLASS_INFO_FLEURINE,
-    #         cfg.CONF_THRESH_FLEURINE,
-    #         cfg.IOU_THRESH_FLEURINE,
-    #         cfg.ANCHORS_GROUP_FOR_FLEURINE,
-    #         draw_image=True,
-    #     )
-    detect.run(
-        "yoloV3/tmp/frame_0007_00m25s (1).jpg",
-        "yoloV3/output/frame_0007_00m25s (1).jpg",
-        cfg.CLASS_NUM_FLEURINE,
-        cfg.CLASS_INFO_FLEURINE,
-        cfg.CONF_THRESH_FLEURINE,
-        cfg.IOU_THRESH_FLEURINE,
-        cfg.ANCHORS_GROUP_FOR_FLEURINE,
-        draw_image=True,
-    )
+    for image_name in os.listdir("ImageDatas/Fleurine_frames"):
+        image_path = os.path.join("ImageDatas/Fleurine_frames", image_name)
+        save_path = os.path.join("yoloV3/output/out_fleurine_100", image_name)
+        detect.run(
+            image_path,
+            save_path,
+            cfg.CLASS_NUM_FLEURINE,
+            cfg.CLASS_INFO_FLEURINE,
+            cfg.CONF_THRESH_FLEURINE,
+            cfg.IOU_THRESH_FLEURINE,
+            cfg.ANCHORS_GROUP_FOR_FLEURINE,
+            draw_image=True,
+        )
+    # detect.run(
+    #     "yoloV3/tmp/frame_0007_00m25s (1).jpg",
+    #     "yoloV3/output/frame_0007_00m25s (1).jpg",
+    #     cfg.CLASS_NUM_FLEURINE,
+    #     cfg.CLASS_INFO_FLEURINE,
+    #     cfg.CONF_THRESH_FLEURINE,
+    #     cfg.IOU_THRESH_FLEURINE,
+    #     cfg.ANCHORS_GROUP_FOR_FLEURINE,
+    #     draw_image=True,
+    # )
 
 
 if __name__ == "__main__":
