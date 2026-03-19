@@ -6,11 +6,11 @@
 
 # 只允许上传 yolo 文件夹
 !yoloV3/
-!ImageDatas/
+#!ImageDatas/
 
 # 允许 yolo 文件夹下所有内容（包括 .py 文件、图片、data/net/output/util 等）
 !yoloV3/**
-!ImageDatas/**
+#!ImageDatas/**
 
 # 不上传 checkpoints 和 logs 文件夹（包括里面所有内容）
 **/__pycache__/
@@ -20,3 +20,5 @@ yoloV3/output
 yoloV3/tmp
 ImageDatas/*.mp4
 ImageDatas/**/*.jpg
+ImageDatas/**/*.txt
+ImageDatas/**/*.xml
