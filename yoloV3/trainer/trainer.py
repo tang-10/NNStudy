@@ -92,7 +92,7 @@ class ModuleTrainer:
 
         return avg_loss
 
-    def calc_loss(self, pred: torch.Tensor, label: torch.Tensor, factor=0.9):
+    def calc_loss(self, pred: torch.Tensor, label: torch.Tensor, factor=0.3):
         # label:B,H,W,3,9   pred:B,27,H,W
         pred = pred.reshape(pred.shape[0], 3, -1, pred.shape[2], pred.shape[3])
         pred = torch.permute(pred, dims=(0, 3, 4, 1, 2))

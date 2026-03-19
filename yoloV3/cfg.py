@@ -70,9 +70,9 @@ CLASS_INFO_FLEURINE = {
     6: ("Wirbel", "black", (0, 0, 0)),
 }
 BASE_IMG_PATH_FLEURINE = "ImageDatas/Fleurine_frames"
-BATCH_SIZE_FLEURINE = 20
+BATCH_SIZE_FLEURINE = 16
 MEAN_FLEURINE = [0.2361, 0.2424, 0.2506]
 STD_FLEURINE = [0.2983, 0.3013, 0.3015]
 CONF_THRESH_FLEURINE = 0.99
-IOU_THRESH_FLEURINE = 0.3
+IOU_THRESH_FLEURINE = 0.45
 # ============================芙莉莲数据集============================

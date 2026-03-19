@@ -81,7 +81,7 @@ class Detect:
     def get_boxes(out: torch.Tensor, feature, thresh, anchors_group):
         # out:N 27 feature feature →N 3 9 feature feature
         out = out.reshape(out.shape[0], 3, -1, out.shape[2], out.shape[3])
-        # 置信度Sigmod()后再比较
+        # 置信度Sigmod()后再比较 TODO
         obj_conf = torch.sigmoid(out[:, :, 0])
         # 置信度筛选
         class_probs = torch.softmax(out[:, :, 5:], dim=2)
@@ -198,13 +198,13 @@ def detect_fleurine():
     model = YOYOV3(num_classes=cfg.CLASS_NUM_FLEURINE, dark53=False).to(cfg.DEVICE)
     detect = Detect(
         model,
-        "yoloV3/checkpoints/best_shuffule_model_fleurine_100.pt",
+        "yoloV3/checkpoints/best_shuffule_model_fleurine_50.pt",
         cfg.MEAN_FLEURINE,
         cfg.STD_FLEURINE,
     )
     for image_name in os.listdir("ImageDatas/Fleurine_frames"):
         image_path = os.path.join("ImageDatas/Fleurine_frames", image_name)
-        save_path = os.path.join("yoloV3/output/out_fleurine_100", image_name)
+        save_path = os.path.join("yoloV3/output/out_fleurine_50", image_name)
         detect.run(
             image_path,
             save_path,

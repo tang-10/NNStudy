@@ -73,15 +73,15 @@ def train_fleurine(epochs):
     # 正样本个数：415 其中类0：120 类1：119 类2：115 类3：18 类4：12 类5：10 类6：21
     # 归一化分类权重（采用balanced方式：总样本数/(类别数×各count))
     # 类0：0.494 类1：0.498 类2：0.516 类3：3.294 类4：4.941 类5：5.929 类6：2.823
-    # class_weights = torch.tensor([0.494, 0.498, 0.516, 3.294, 4.941, 5.929, 2.823]).to(
-    #     cfg.DEVICE
-    # )
-    # criterion["cls"] = nn.CrossEntropyLoss(weight=class_weights, reduction="mean")
-    criterion["cls"] = nn.CrossEntropyLoss()
+    class_weights = torch.tensor([0.494, 0.498, 0.516, 3.294, 4.941, 5.929, 2.823]).to(
+        cfg.DEVICE
+    )
+    criterion["cls"] = nn.CrossEntropyLoss(weight=class_weights, reduction="mean")
+    # criterion["cls"] = nn.CrossEntropyLoss()
     criterion["loc"] = nn.MSELoss()
     criterion["conf"] = nn.BCEWithLogitsLoss()
     # 优化器
-    optimizer = optim.AdamW(model.parameters(), lr=0.001)
+    optimizer = optim.AdamW(model.parameters(), lr=0.001, weight_decay=1e-4)
     # lr优化器
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
     trainer = ModuleTrainer(
@@ -111,4 +111,4 @@ def train_fleurine(epochs):
 
 if __name__ == "__main__":
     # train_base(20)
-    train_fleurine(epochs=100)
+    train_fleurine(epochs=50)

@@ -4,6 +4,7 @@ import cfg
 import cv2
 import numpy as np
 import torch
+from PIL import Image
 
 """
 1) 加载模型权重
@@ -33,25 +34,40 @@ class Fleurine_Identification:
             h, w = frame.shape[:2]
             fourcc = cv2.VideoWriter_fourcc(*"mp4v")
             out = cv2.VideoWriter("output_fleurine.mp4", fourcc, 30.0, (w, h))
+            count = 0
+            DETECT_INTERVAL = 3  # 每3帧检测一次
+            last_boxes = None  # 缓存上一检测结果
             while True:
                 if frame is None:
                     break
-                # 转 RGB（和模型期望一致）
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                # 图像resize到416x416
-                frame_resized, scale, left, top = self.resize_image(frame)
-                # 处理后的图像传入模型，得到预测框
-                with torch.no_grad():
-                    boxes = self.detect.get_filter_boxes(
-                        frame_resized,
-                        cfg.CLASS_NUM_FLEURINE,
-                        cfg.CONF_THRESH_FLEURINE,
-                        cfg.IOU_THRESH_FLEURINE,
-                        cfg.ANCHORS_GROUP_FOR_FLEURINE,
-                    )
+                cv2.imwrite(f"yoloV3/output/out_video_frame/{count}_bgr.jpg", frame)
+                frame_bgr = frame.copy()
+                if count % DETECT_INTERVAL == 0:
+                    # 转 RGB（和模型期望一致）
+                    frame_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
+                    # 图像resize到416x416
+                    frame_resized_rgb, scale, left, top = self.resize_image(frame_rgb)
+                    frame_pil = Image.fromarray(frame_resized_rgb)
+                    frame_pil.save(f"yoloV3/output/out_video_frame/{count}_rbg.jpg")
+                    # 处理后的图像传入模型，得到预测框
+                    with torch.no_grad():
+                        boxes = self.detect.get_filter_boxes(
+                            frame_pil,
+                            cfg.CLASS_NUM_FLEURINE,
+                            cfg.CONF_THRESH_FLEURINE,
+                            cfg.IOU_THRESH_FLEURINE,
+                            cfg.ANCHORS_GROUP_FOR_FLEURINE,
+                        )
+                    last_boxes = boxes
+                else:
+                    boxes = last_boxes
                 # 原图像上画框
-                self.draw_rect_frame(frame, boxes, scale, left, top)
-                out.write(frame)
+                frame_bgr = self.draw_rect_frame(frame_bgr, boxes, scale, left, top)
+                cv2.imwrite(
+                    f"yoloV3/output/out_video_frame/{count}_after.jpg", frame_bgr
+                )
+                count += 1
+                out.write(frame_bgr)
                 ret, frame = cap.read()
         finally:
             if cap is not None:
@@ -140,9 +156,10 @@ class Fleurine_Identification:
                 color,
                 2,
             )
+        return frame
 
 
 if __name__ == "__main__":
     fi = Fleurine_Identification()
-    video_path = "ImageDatas/part1-1.mp4"
+    video_path = "ImageDatas/tmp1-1.mp4"
     fi.run(video_path)
