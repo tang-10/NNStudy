@@ -1,0 +1,24 @@
+# 忽略根目录下所有文件和文件夹（包括其他子项目和根目录文件）
+*
+
+# 必须保留 .gitignore 本身
+!.gitignore
+
+# 只允许上传 yolo 文件夹
+!yoloV3/
+#!ImageDatas/
+
+# 允许 yolo 文件夹下所有内容（包括 .py 文件、图片、data/net/output/util 等）
+!yoloV3/**
+#!ImageDatas/**
+
+# 不上传 checkpoints 和 logs 文件夹（包括里面所有内容）
+**/__pycache__/
+yoloV3/checkpoints/
+yoloV3/logs/
+yoloV3/output
+yoloV3/tmp
+ImageDatas/*.mp4
+ImageDatas/**/*.jpg
+ImageDatas/**/*.txt
+ImageDatas/**/*.xml
