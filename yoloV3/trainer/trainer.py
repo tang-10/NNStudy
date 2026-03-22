@@ -96,30 +96,46 @@ class ModuleTrainer:
         # # label:B,H,W,3,9   pred:B,27,H,W
         # pred = pred.reshape(pred.shape[0], 3, -1, pred.shape[2], pred.shape[3])
         # pred = torch.permute(pred, dims=(0, 3, 4, 1, 2))
+        # pos_mask = label[..., 0] == 1  # 正样本
+        # noobj_mask = label[..., 0] == 0  # 负样本
+        # pos_mask = pos_mask.to(cfg.DEVICE)
+        # # cls_loss = self.cls_criterion(pred[..., 5:][pos_mask], label[..., 5:][pos_mask])
+        # cls_loss = self.cls_criterion(
+        #     pred[..., 5:][pos_mask], label[..., 5:][pos_mask].argmax(dim=-1)
+        # )
+        # loc_loss = self.loc_criterion(
+        #     pred[..., 1:5][pos_mask], label[..., 1:5][pos_mask]
+        # )
+        # conf_loss_pos = self.conf_criterion(
+        #     pred[..., 0][pos_mask], label[..., 0][pos_mask]
+        # )
+        # conf_loss_noobj = self.conf_criterion(
+        #     pred[..., 0][noobj_mask], label[..., 0][noobj_mask]
+        # )
+        # # 正样本权重0.9，负样本0.1
+        # total_loss = (
+        #     cls_loss + loc_loss + conf_loss_pos
+        # ) * factor + conf_loss_noobj * (1 - factor)
         # Anchor-Free 版本
         # label: B,H,W,1+4+nc    pred: B,1+4+nc,H,W
         # 直接 permute 成 B,H,W,C
         pred = pred.permute(0, 2, 3, 1)                     # B,H,W,1+4+nc
-        pos_mask = label[..., 0] == 1  # 正样本
-        noobj_mask = label[..., 0] == 0  # 负样本
-        pos_mask = pos_mask.to(cfg.DEVICE)
-        # cls_loss = self.cls_criterion(pred[..., 5:][pos_mask], label[..., 5:][pos_mask])
-        cls_loss = self.cls_criterion(
-            pred[..., 5:][pos_mask], label[..., 5:][pos_mask].argmax(dim=-1)
-        )
-        loc_loss = self.loc_criterion(
-            pred[..., 1:5][pos_mask], label[..., 1:5][pos_mask]
-        )
-        conf_loss_pos = self.conf_criterion(
-            pred[..., 0][pos_mask], label[..., 0][pos_mask]
-        )
-        conf_loss_noobj = self.conf_criterion(
-            pred[..., 0][noobj_mask], label[..., 0][noobj_mask]
-        )
-        # 正样本权重0.9，负样本0.1
-        total_loss = (
-            cls_loss + loc_loss + conf_loss_pos
-        ) * factor + conf_loss_noobj * (1 - factor)
+        pos_mask = label[..., 0] == 1
+
+        # 修改位置2：分类损失修复（去除 .argmax，保持 one-hot 格式）
+        cls_pred = pred[..., 5:][pos_mask]                  # [num_pos, nc]
+        cls_target = label[..., 5:][pos_mask]               # [num_pos, nc]
+        cls_loss = self.cls_criterion(cls_pred, cls_target).mean()
+
+        # 修改位置3：边界框回归损失
+        box_pred = pred[..., 1:5][pos_mask]
+        box_target = label[..., 1:5][pos_mask]
+        box_loss = self.loc_criterion(box_pred, box_target).mean()
+
+        # 修改位置4：置信度损失（全图计算，保留原 factor 权重）
+        conf_loss = self.conf_criterion(pred[..., 0], label[..., 0]).mean()
+
+        total_loss = box_loss + cls_loss + conf_loss * factor
         return total_loss
 
 
