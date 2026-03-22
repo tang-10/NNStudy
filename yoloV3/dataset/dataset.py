@@ -23,7 +23,7 @@ class LoadImgAndLabel(Dataset):
     ):
         super().__init__()
         self.base_image_path = base_image_path
-        self.anchors_group = anchors_group
+        # self.anchors_group = anchors_group
         self.class_num = class_num
         if transform:
             self.t = transform
@@ -51,42 +51,59 @@ class LoadImgAndLabel(Dataset):
         boxes = np.split(boxes, len(boxes) // 5)
         label_all = {}
         # feature: 特征图尺寸
-        for feature in self.anchors_group:
-            label_all[feature] = torch.zeros(
-                (feature, feature, 3, 1 + 4 + self.class_num)
-            )
-            factor = cfg.SIZE / feature
+        # for feature in self.anchors_group:
+        #     label_all[feature] = torch.zeros(
+        #         (feature, feature, 3, 1 + 4 + self.class_num)
+        #     )
+        #     factor = cfg.SIZE / feature
+        #     for box in boxes:
+        #         # cx,cy: 标签中心点坐标 gt_w,gt_h: 真实框宽,高
+        #         cls, cx, cy, gt_w, gt_h = box
+        #         # 坐标偏移量，坐标索引
+        #         tx, cx_idx = math.modf(cx / factor)
+        #         ty, cy_idx = math.modf(cy / factor)
+        #         cls_onehot = F.one_hot(torch.tensor(int(cls)), self.class_num)
+
+        #         # 计算这个gt框与当前scale的3个anchor的IoU
+        #         ious = []
+        #         for anchor in self.anchors_group[feature]:
+        #             anchor_w, anchor_h = anchor
+        #             inter = min(gt_w, anchor_w) * min(gt_h, anchor_h)
+        #             union = gt_w * gt_h + anchor_w * anchor_h - inter
+        #             iou = inter / union if union > 0 else 0
+        #             ious.append(iou)
+
+        #         # 只给IoU最大的那个anchor负责（responsible anchor）
+        #         best_idx = ious.index(max(ious))
+
+        #         # 只给最佳anchor赋值
+        #         anchor_w, anchor_h = self.anchors_group[feature][best_idx]
+        #         tw = torch.log(torch.tensor(gt_w / anchor_w))
+        #         th = torch.log(torch.tensor(gt_h / anchor_h))
+        #         # # 每个特征图三个锚框：例[[360, 360], [360, 180], [180, 360]]
+        #         # for idx, anchor in enumerate(cfg.ANCHORS_GROUP[feature]):
+        #         #     anchor_w, anchor_h = anchor
+        #         #     # 微调锚框
+        #         #     tw = torch.log(torch.tensor(gt_w / anchor_w))
+        #         #     th = torch.log(torch.tensor(gt_h / anchor_h))
+        #         label_all[feature][int(cy_idx), int(cx_idx), best_idx, :] = (
+        #             torch.tensor([1, tx, ty, tw, th, *cls_onehot])
+        #         )
+        for feature in [13, 26, 52]:
+            label_all[feature] = torch.zeros((feature, feature, 1 + 4 + self.class_num))
+            stride = cfg.SIZE / feature
             for box in boxes:
-                # cx,cy: 标签中心点坐标 gt_w,gt_h: 真实框宽,高
                 cls, cx, cy, gt_w, gt_h = box
                 # 坐标偏移量，坐标索引
-                tx, cx_idx = math.modf(cx / factor)
-                ty, cy_idx = math.modf(cy / factor)
+                tx, cx_idx = math.modf(cx / stride)
+                ty, cy_idx = math.modf(cy / stride)
                 cls_onehot = F.one_hot(torch.tensor(int(cls)), self.class_num)
 
-                # 计算这个gt框与当前scale的3个anchor的IoU
-                ious = []
-                for anchor in self.anchors_group[feature]:
-                    anchor_w, anchor_h = anchor
-                    inter = min(gt_w, anchor_w) * min(gt_h, anchor_h)
-                    union = gt_w * gt_h + anchor_w * anchor_h - inter
-                    iou = inter / union if union > 0 else 0
-                    ious.append(iou)
-
-                # 只给IoU最大的那个anchor负责（responsible anchor）
-                best_idx = ious.index(max(ious))
-
-                # 只给最佳anchor赋值
-                anchor_w, anchor_h = self.anchors_group[feature][best_idx]
-                tw = torch.log(torch.tensor(gt_w / anchor_w))
-                th = torch.log(torch.tensor(gt_h / anchor_h))
-                # # 每个特征图三个锚框：例[[360, 360], [360, 180], [180, 360]]
-                # for idx, anchor in enumerate(cfg.ANCHORS_GROUP[feature]):
-                #     anchor_w, anchor_h = anchor
-                #     # 微调锚框
-                #     tw = torch.log(torch.tensor(gt_w / anchor_w))
-                #     th = torch.log(torch.tensor(gt_h / anchor_h))
-                label_all[feature][int(cy_idx), int(cx_idx), best_idx, :] = (
+                # tw/th 从 log(gt/anchor) 改为 gt/stride（Anchor-Free 标准归一化）
+                tw = torch.tensor(gt_w / stride)
+                th = torch.tensor(gt_h / stride)
+                # 直接赋值（obj=1）
+                label_all[feature][int(cy_idx), int(cx_idx), :] = (
                     torch.tensor([1, tx, ty, tw, th, *cls_onehot])
                 )
 

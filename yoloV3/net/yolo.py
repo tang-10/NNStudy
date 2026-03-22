@@ -19,20 +19,20 @@ class YOYOV3(nn.Module):
         # P0 侦测头
         self.p0_head = nn.Sequential(
             ConvBNLeakyReLU(512, 1024, 3),
-            # ConvBNLeakyReLU(1024, (1 + 4 + self.num_classes) * 3, 1),
-            nn.Conv2d(1024, (1 + 4 + self.num_classes) * 3, 1),
+            # nn.Conv2d(1024, (1 + 4 + self.num_classes) * 3, 1),
+            nn.Conv2d(1024, (1 + 4 + self.num_classes), 1),
         )
         # P1 侦测头
         self.p1_head = nn.Sequential(
             ConvBNLeakyReLU(256, 512, 3),
-            # ConvBNLeakyReLU(512, (1 + 4 + self.num_classes) * 3, 1),
-            nn.Conv2d(512, (1 + 4 + self.num_classes) * 3, 1),
+            #nn.Conv2d(512, (1 + 4 + self.num_classes) * 3, 1),
+            nn.Conv2d(512, (1 + 4 + self.num_classes), 1),
         )
         # P2 侦测头
         self.p2_head = nn.Sequential(
             ConvBNLeakyReLU(128, 256, 3),
-            # ConvBNLeakyReLU(256, (1 + 4 + self.num_classes) * 3, 1),
-            nn.Conv2d(256, (1 + 4 + self.num_classes) * 3, 1),
+            # nn.Conv2d(256, (1 + 4 + self.num_classes) * 3, 1),
+            nn.Conv2d(256, (1 + 4 + self.num_classes), 1),
         )
 
     def forward(self, x):

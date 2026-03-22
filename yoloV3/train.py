@@ -4,7 +4,27 @@ from trainer.trainer import ModuleTrainer
 from dataset.dataset import LoadImgAndLabel
 from net.yolo import YOYOV3
 import cfg
+from torch.nn import functional as F
 
+class FocalLoss(nn.Module):
+    def __init__(self, gamma: float = 1.5, alpha: float = 0.25):
+            """Initialize FocalLoss class with focusing and balancing parameters."""
+            super().__init__()
+            self.gamma = gamma
+            self.alpha = torch.tensor(alpha)
+
+    def forward(self, pred: torch.Tensor, label: torch.Tensor) -> torch.Tensor:
+        """Calculate focal loss with modulating factors for class imbalance."""
+        loss = F.binary_cross_entropy_with_logits(pred, label, reduction="none")
+        pred_prob = pred.sigmoid()  # prob from logits
+        p_t = label * pred_prob + (1 - label) * (1 - pred_prob)
+        modulating_factor = (1.0 - p_t) ** self.gamma
+        loss *= modulating_factor
+        if (self.alpha > 0).any():
+            self.alpha = self.alpha.to(device=pred.device, dtype=pred.dtype)
+            alpha_factor = label * self.alpha + (1 - label) * (1 - self.alpha)
+            loss *= alpha_factor
+        return loss.mean(1).sum()
 
 def train_base(epochs):
     dataset = LoadImgAndLabel(
@@ -68,16 +88,17 @@ def train_fleurine(epochs):
         cfg.MEAN_FLEURINE,
         cfg.STD_FLEURINE,
     )
-    model = YOYOV3(cfg.CLASS_NUM_FLEURINE, dark53=False)
+    model = YOYOV3(cfg.CLASS_NUM_FLEURINE, dark53=True)
     criterion = {}
     # 正样本个数：415 其中类0：120 类1：119 类2：115 类3：18 类4：12 类5：10 类6：21
     # 归一化分类权重（采用balanced方式：总样本数/(类别数×各count))
     # 类0：0.494 类1：0.498 类2：0.516 类3：3.294 类4：4.941 类5：5.929 类6：2.823
-    class_weights = torch.tensor([0.494, 0.498, 0.516, 3.294, 4.941, 5.929, 2.823]).to(
-        cfg.DEVICE
-    )
-    criterion["cls"] = nn.CrossEntropyLoss(weight=class_weights, reduction="mean")
+    # class_weights = torch.tensor([0.494, 0.498, 0.516, 3.294, 4.941, 5.929, 2.823]).to(
+    #     cfg.DEVICE
+    # )
+    # criterion["cls"] = nn.CrossEntropyLoss(weight=class_weights, reduction="mean")
     # criterion["cls"] = nn.CrossEntropyLoss()
+    criterion["cls"] = FocalLoss(gamma=1.5, alpha=0.25)
     criterion["loc"] = nn.MSELoss()
     criterion["conf"] = nn.BCEWithLogitsLoss()
     # 优化器
