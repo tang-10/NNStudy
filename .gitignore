@@ -6,6 +6,8 @@
 
 # 只允许上传 yolo 文件夹
 !yoloV3/
+!yolov8/
+!yolov8/bonedetect/
 !yolov8/bonedetect/**
 #!ImageDatas/
 

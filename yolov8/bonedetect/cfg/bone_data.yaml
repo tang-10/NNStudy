@@ -1,0 +1,13 @@
+path: /home/tangl/projects/datasets/bone # dataset root dir
+train: train/images
+val: val/images
+
+# Classes
+names:
+  0: Radius
+  1: Ulna
+  2: MCPFirst
+  3: MCP
+  4: ProximalPhalanx
+  5: MiddlePhalanx
+  6: DistalPhalanx
