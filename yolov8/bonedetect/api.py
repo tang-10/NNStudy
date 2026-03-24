@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import cv2
@@ -9,8 +9,15 @@ import tempfile
 import os
 from pathlib import Path
 
-# 导入 detect.py 中的两个绘制方法
-from bonedetect.detect_and_classfiy import draw_arthrosis, draw_arthrosis_keyjoint
+# 导入 detect_and_classfiy.py 中的方法
+from detect_and_classfiy import (
+    draw_arthrosis,
+    draw_arthrosis_keyjoint,
+    get_keyjoint,
+    get_score,
+    calcBoneAge,
+    export,
+)
 
 app = FastAPI(title="BoneDetect API", version="1.0.0")
 
@@ -35,15 +42,19 @@ def health():
 
 
 @app.post("/api/detect")
-async def detect(file: UploadFile = File(...)):
+async def detect(file: UploadFile = File(...), sex: str = Form(...)):
     """
-    接收一张手部 X 光图像，返回：
-    - annotated_all: base64 编码的全量标记图（draw_arthrosis）
-    - annotated_selected: base64 编码的筛选标记图（draw_arthrosis_selected）
+    接收一张手部 X 光图像和性别，返回：
+    - annotated_all: base64 编码的全量标记图
+    - annotated_selected: base64 编码的筛选标记图
+    - report: 诊断报告文本
     - processing_time: 处理耗时
     """
     if not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="请上传图片文件")
+
+    if sex not in ["boy", "girl"]:
+        raise HTTPException(status_code=400, detail="性别必须为 'boy' 或 'girl'")
 
     start = time.time()
 
@@ -75,6 +86,12 @@ async def detect(file: UploadFile = File(...)):
         if not annotated_all or not annotated_selected:
             raise HTTPException(status_code=500, detail="标记图生成失败")
 
+        # ── 计算骨龄和生成报告 ──
+        _, _, images_keyjoint = get_keyjoint(input_path)
+        total_score, scores = get_score(sex, images_keyjoint)
+        bone_age = calcBoneAge(total_score, sex)
+        report = export(scores, total_score, bone_age)
+
     finally:
         # 清理临时文件
         for p in [input_path, output_all, output_selected]:
@@ -88,6 +105,7 @@ async def detect(file: UploadFile = File(...)):
         "data": {
             "annotated_all": annotated_all,
             "annotated_selected": annotated_selected,
+            "report": report,
             "processing_time": f"{elapsed:.2f}s",
         },
     }

@@ -3,6 +3,7 @@ import { useState, useRef } from 'react'
 export default function ImageUploader({ onUpload, onClear, isAnalyzing }) {
   const [preview, setPreview] = useState(null)
   const [dragActive, setDragActive] = useState(false)
+  const [sex, setSex] = useState('boy')  // 默认选择男
   const inputRef = useRef(null)
 
   const handleFile = (file) => {
@@ -13,7 +14,7 @@ export default function ImageUploader({ onUpload, onClear, isAnalyzing }) {
     const reader = new FileReader()
     reader.onload = (e) => {
       setPreview(e.target.result)
-      onUpload(file, e.target.result)
+      onUpload(file, e.target.result, sex)  // 传递性别
     }
     reader.readAsDataURL(file)
   }
@@ -42,6 +43,35 @@ export default function ImageUploader({ onUpload, onClear, isAnalyzing }) {
       <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
         <span>📤</span><span>上传 X 光图像</span>
       </h2>
+
+      {/* 性别选择 */}
+      <div className="mb-4 p-3 bg-primary-50 rounded-lg border border-primary-200">
+        <p className="text-sm font-medium text-gray-700 mb-2">请选择性别：</p>
+        <div className="flex items-center space-x-4">
+          <label className="flex items-center space-x-2 cursor-pointer">
+            <input
+              type="radio"
+              name="sex"
+              value="boy"
+              checked={sex === 'boy'}
+              onChange={(e) => setSex(e.target.value)}
+              className="w-4 h-4 text-primary-600"
+            />
+            <span className="text-sm text-gray-700">👦 男</span>
+          </label>
+          <label className="flex items-center space-x-2 cursor-pointer">
+            <input
+              type="radio"
+              name="sex"
+              value="girl"
+              checked={sex === 'girl'}
+              onChange={(e) => setSex(e.target.value)}
+              className="w-4 h-4 text-primary-600"
+            />
+            <span className="text-sm text-gray-700">👧 女</span>
+          </label>
+        </div>
+      </div>
 
       {!preview ? (
         /* 拖拽上传区 */
@@ -104,6 +134,10 @@ export default function ImageUploader({ onUpload, onClear, isAnalyzing }) {
             {/* 图片标签 */}
             <div className="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
               原始图像
+            </div>
+            {/* 性别标签 */}
+            <div className="absolute top-2 right-2 bg-primary-600 text-white text-xs px-2 py-1 rounded">
+              {sex === 'boy' ? '👦 男' : '👧 女'}
             </div>
           </div>
 

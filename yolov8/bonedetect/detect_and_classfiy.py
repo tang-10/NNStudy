@@ -8,7 +8,7 @@ import math
 
 
 def get_arthrosis_info(image):
-    model = YOLO("./bonedetect/weights/yolov8m_detect.pt")
+    model = YOLO("./weights/yolov8m_detect.pt")
     results = model(image, conf=0.5)
     return results[0]
 
@@ -90,7 +90,7 @@ def get_keyjoint(image_path):
         crop_img = orig_img[y1:y2, x1:x2]
         # 转为 torch tensor（CHW, float32, 归一化到 0~1）
         crop_tensor = torch.from_numpy(crop_img).permute(2, 0, 1).float() / 255.0
-        # 可选：加 batch 维度（1, 3, H, W）方便后面直接喂给分类模型
+        # 加 batch 维度（1, 3, H, W）方便后面直接喂给分类模型
         crop_tensor = crop_tensor.unsqueeze(0)
         images_keyjoint[key] = crop_tensor
 
@@ -106,7 +106,7 @@ def save_image_keyjoint(images_keyjoint):
             * 255.0
         )
         save_img = save_img.astype(np.uint8)
-        cv2.imwrite(f"./bonedetect/crops/{key}.png", save_img)
+        cv2.imwrite(f"./crops/{key}.png", save_img)
 
 
 def draw_arthrosis_keyjoint(image_path, save_path):
@@ -134,7 +134,8 @@ def draw_arthrosis_keyjoint(image_path, save_path):
 def get_score(sex, images_keyjoint):
     # 预加载所有模型
     joint_to_model = {
-        joint: YOLO(f"./bonedetect/weights/{filename}") for joint, filename in config.JOINT_TO_CLS_MODEL.items()
+        joint: YOLO(f"./weights/{filename}")
+        for joint, filename in config.JOINT_TO_CLS_MODEL.items()
     }
     total_score = 0
     scores = {}
@@ -158,12 +159,20 @@ def get_score(sex, images_keyjoint):
 
 def export(scores, total_score, boneAge):
     report = """
-    第一掌骨骺分级{}级，得{}分；第三掌骨骨骺分级{}级，得{}分；第五掌骨骨骺分级{}级，得{}分；
-    第一近节指骨骨骺分级{}级，得{}分；第三近节指骨骨骺分级{}级，得{}分；第五近节指骨骨骺分级{}级，得{}分；
-    第三中节指骨骨骺分级{}级，得{}分；第五中节指骨骨骺分级{}级，得{}分；
-    第一远节指骨骨骺分级{}级，得{}分；第三远节指骨骨骺分级{}级，得{}分；第五远节指骨骨骺分级{}级，得{}分；
-    尺骨分级{}级，得{}分；桡骨骨骺分级{}级，得{}分。
- 
+    第一掌骨骺分级{}级，得{}分；
+    第三掌骨骨骺分级{}级，得{}分；
+    第五掌骨骨骺分级{}级，得{}分；
+    第一近节指骨骨骺分级{}级，得{}分；
+    第三近节指骨骨骺分级{}级，得{}分；
+    第五近节指骨骨骺分级{}级，得{}分；
+    第三中节指骨骨骺分级{}级，得{}分；
+    第五中节指骨骨骺分级{}级，得{}分；
+    第一远节指骨骨骺分级{}级，得{}分；
+    第三远节指骨骨骺分级{}级，得{}分；
+    第五远节指骨骨骺分级{}级，得{}分；
+    尺骨分级{}级，得{}分；
+    桡骨骨骺分级{}级，得{}分。
+
     RUS-CHN分级计分法，受检儿CHN总得分：{}分，骨龄约为{}岁。""".format(
         scores["MCPFirst"][0],
         scores["MCPFirst"][1],
@@ -232,7 +241,7 @@ def calcBoneAge(score, sex):
 
 
 if __name__ == "__main__":
-    image_path = "./bonedetect/test_1544.png"
+    image_path = "./test_1544.png"
     image_name = image_path.split("/")[-1].split(".")[0]
     # save_path_full = image_path.replace(image_name, image_name + "_detected")
     # save_path_selected = image_path.replace(image_name, image_name + "_selected")

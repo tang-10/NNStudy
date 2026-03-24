@@ -1,35 +1,31 @@
 import { useState, useRef, useEffect } from 'react'
 
-export default function ResultDisplay({ result, isAnalyzing, originalImage }) {
-  const [preview, setPreview] = useState(null)  // 当前预览的图片
-  const [scale, setScale] = useState(1)         // 缩放比例
-  const [position, setPosition] = useState({ x: 0, y: 0 })  // 拖拽位置
+export default function ResultDisplay({ result, isAnalyzing, originalImage, showImagesOnly }) {
+  const [preview, setPreview] = useState(null)
+  const [scale, setScale] = useState(1)
+  const [position, setPosition] = useState({ x: 0, y: 0 })
   const [dragging, setDragging] = useState(false)
   const dragStart = useRef({ x: 0, y: 0 })
   const imgRef = useRef(null)
 
-  // 打开预览
   const openPreview = (imgData) => {
     setPreview(imgData)
     setScale(1)
     setPosition({ x: 0, y: 0 })
   }
 
-  // 关闭预览
   const closePreview = () => {
     setPreview(null)
     setScale(1)
     setPosition({ x: 0, y: 0 })
   }
 
-  // 滚轮缩放
   const handleWheel = (e) => {
     e.preventDefault()
     const delta = e.deltaY > 0 ? -0.1 : 0.1
     setScale(prev => Math.min(Math.max(0.5, prev + delta), 5))
   }
 
-  // 拖拽开始
   const handleMouseDown = (e) => {
     if (e.button !== 0) return
     setDragging(true)
@@ -39,7 +35,6 @@ export default function ResultDisplay({ result, isAnalyzing, originalImage }) {
     }
   }
 
-  // 拖拽移动
   const handleMouseMove = (e) => {
     if (!dragging) return
     setPosition({
@@ -48,12 +43,10 @@ export default function ResultDisplay({ result, isAnalyzing, originalImage }) {
     })
   }
 
-  // 拖拽结束
   const handleMouseUp = () => {
     setDragging(false)
   }
 
-  // ESC 关闭预览
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' && preview) {
@@ -76,7 +69,7 @@ export default function ResultDisplay({ result, isAnalyzing, originalImage }) {
             </svg>
           </div>
           <p className="font-medium">等待上传图片</p>
-          <p className="text-sm">上传 X 光图像后，标记结果将显示在此处</p>
+          <p className="text-sm">上传 X 光图像后，检测结果将显示在此处</p>
         </div>
       </div>
     )
@@ -93,8 +86,8 @@ export default function ResultDisplay({ result, isAnalyzing, originalImage }) {
                 d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
             </svg>
           </div>
-          <p className="text-gray-700 font-medium">YOLOv8 正在定位关节...</p>
-          <p className="text-sm text-gray-400">请稍候</p>
+          <p className="text-gray-700 font-medium">YOLOv8 正在检测...</p>
+          <p className="text-sm text-gray-400">正在计算骨龄，请稍候</p>
         </div>
       </div>
     )
